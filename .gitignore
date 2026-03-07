@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+monitoring/hello.log
+monitoring/positions.yml
+

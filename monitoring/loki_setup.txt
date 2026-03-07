@@ -1,0 +1,23 @@
+Grafana Loki Local Setup
+========================
+
+1. Build the application image:
+   docker build -t devops-intern-final:latest .
+
+2. Start Loki and Promtail from the repository:
+   docker compose -f monitoring/docker-compose.yml up -d
+
+3. Start the application container in long-running service mode:
+   docker run -d --name hello-devops -e SERVICE_MODE=true -e LOG_INTERVAL_SECONDS=10 devops-intern-final:latest
+
+4. Forward container logs into a local file that Promtail scrapes:
+   docker logs -f hello-devops 2>&1 | tee monitoring/hello.log
+
+5. View logs from Loki:
+   curl -G -s "http://localhost:3100/loki/api/v1/query_range" --data-urlencode 'query={job="hello-devops"}'
+
+Notes
+-----
+- Loki listens on http://localhost:3100
+- Promtail reads the file /workspace/monitoring/hello.log inside the container
+- The hello container emits heartbeat logs every 10 seconds while SERVICE_MODE=true
