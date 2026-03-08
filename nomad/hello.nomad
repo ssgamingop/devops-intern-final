@@ -26,7 +26,7 @@ job "hello-devops" {
       }
 
       resources {
-        cpu    = 100
+        cpu    = 10
         memory = 128
       }
 
@@ -37,4 +37,3 @@ job "hello-devops" {
     }
   }
 }
-
