@@ -1,13 +1,13 @@
 # DevOps Intern Final Assessment
 
-[![CI](https://github.com/somyajeet/devops-intern-final/actions/workflows/ci.yml/badge.svg)](https://github.com/somyajeet/devops-intern-final/actions/workflows/ci.yml)
+[![CI](https://github.com/ssgamingop/devops-intern-final/actions/workflows/ci.yml/badge.svg)](https://github.com/ssgamingop/devops-intern-final/actions/workflows/ci.yml)
 
 Name: Somyajeet  
-Date: March 7, 2026
+Date: March 8, 2026
 
 This repository builds a small end-to-end DevOps workflow using Git, Linux scripting, Docker, GitHub Actions, Nomad, and Grafana Loki. Each step produces output that is reused in the next stage.
 
-Note: The CI badge URL assumes the GitHub repository will be published as `somyajeet/devops-intern-final`. Update the badge URL if your GitHub username or repository name differs.
+Repository: `https://github.com/ssgamingop/devops-intern-final`
 
 ## Project Structure
 
@@ -23,7 +23,9 @@ Note: The CI badge URL assumes the GitHub repository will be published as `somya
 │   └── promtail-config.yml
 ├── nomad/hello.nomad
 ├── README.md
-└── scripts/sysinfo.sh
+└── scripts/
+    ├── publish_local_image.sh
+    └── sysinfo.sh
 ```
 
 ## 1. Git & GitHub Setup
@@ -107,10 +109,12 @@ After pushing this repository to GitHub, the badge at the top of this README wil
 
 The Nomad job specification is stored at `nomad/hello.nomad`.
 
-Build the image before starting the job:
+For this local setup, Nomad pulls the image from a small local registry running on `localhost:5001`.
+
+Publish the image for Nomad:
 
 ```bash
-docker build -t devops-intern-final:latest .
+./scripts/publish_local_image.sh
 ```
 
 Run the Nomad job:
@@ -131,7 +135,7 @@ Follow the application logs from the active allocation:
 nomad alloc logs <allocation-id>
 ```
 
-The Nomad job enables `SERVICE_MODE=true` so the container stays alive and continues writing logs.
+The Nomad job enables `SERVICE_MODE=true` so the container stays alive and continues writing logs. In this repository, the job pulls `localhost:5001/devops-intern-final:latest` and uses `cpu = 10`, `memory = 128`.
 
 ## 6. Monitoring with Grafana Loki
 
@@ -160,6 +164,12 @@ Forward the container logs into `monitoring/hello.log` so Promtail can ship them
 docker logs -f hello-devops 2>&1 | tee monitoring/hello.log
 ```
 
+If you want to reuse the Nomad allocation instead of a standalone container, you can forward Nomad logs with:
+
+```bash
+nomad alloc logs -f <allocation-id> | tee monitoring/hello.log
+```
+
 Query Loki from the terminal:
 
 ```bash
@@ -171,14 +181,21 @@ Detailed setup notes are included in `monitoring/loki_setup.txt`.
 
 ## Verification
 
-Commands used locally in this repository:
+Verified locally on March 8, 2026:
 
 ```bash
 python3 hello.py
 ./scripts/sysinfo.sh
 docker build -t devops-intern-final:latest .
 docker run --rm devops-intern-final:latest
+./scripts/publish_local_image.sh
+nomad job run nomad/hello.nomad
+nomad alloc logs <allocation-id>
+docker compose -f monitoring/docker-compose.yml up -d
+docker run -d --name hello-devops -e SERVICE_MODE=true -e LOG_INTERVAL_SECONDS=10 devops-intern-final:latest
+docker logs -f hello-devops 2>&1 | tee monitoring/hello.log
+curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
+  --data-urlencode 'query={job="hello-devops"}'
 ```
 
-If Docker, Nomad, or GitHub Actions are not available on the host, the configuration files can still be committed and run later in an environment with those tools installed.
-
+GitHub Actions does not run locally; it runs on GitHub on every push to the public repository above.

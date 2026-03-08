@@ -1,8 +1,8 @@
 Grafana Loki Local Setup
 ========================
 
-1. Build the application image:
-   docker build -t devops-intern-final:latest .
+1. Build and publish the application image:
+   ./scripts/publish_local_image.sh
 
 2. Start Loki and Promtail from the repository:
    docker compose -f monitoring/docker-compose.yml up -d
@@ -21,3 +21,4 @@ Notes
 - Loki listens on http://localhost:3100
 - Promtail reads the file /workspace/monitoring/hello.log inside the container
 - The hello container emits heartbeat logs every 10 seconds while SERVICE_MODE=true
+- For the Nomad job, the image is published to localhost:5001/devops-intern-final:latest
